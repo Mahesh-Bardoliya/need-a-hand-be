@@ -55,6 +55,7 @@ class User(Base, TimestampMixin, SoftDeleteMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String(100), nullable=False)
+    username = Column(String(32), unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False)
     password_hash = Column(Text, nullable=False)
 
@@ -72,7 +73,9 @@ class HelpRequest(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False,
         index=True,
     )
-    user = relationship("User", backref(__tablename__, cascade="CASCADE"))
+    user = relationship(
+        "User", backref=backref(__tablename__, cascade="all, delete-orphan")
+    )
     description = Column(Text, nullable=False)
     location = Column(String(255), nullable=False)
     radius_meters = Column(Integer, default=5000)
@@ -91,11 +94,15 @@ class HelpOffer(Base, TimestampMixin, SoftDeleteMixin):
         ForeignKey("help_requests.id", ondelete="CASCADE"),
         nullable=False,
     )
-    request = relationship("HelpRequest", backref(__tablename__, cascade="CASCADE"))
+    request = relationship(
+        "HelpRequest", backref=backref(__tablename__, cascade="all, delete-orphan")
+    )
     helper_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
-    helper = relationship("User", backref(__tablename__, cascade="CASCADE"))
+    helper = relationship(
+        "User", backref=backref(__tablename__, cascade="all, delete-orphan")
+    )
     message = Column(Text, nullable=False)
     is_accepted = Column(Boolean, default=False)
 
@@ -113,14 +120,14 @@ class Rating(Base, TimestampMixin, SoftDeleteMixin):
         nullable=False,
     )
     help_request = relationship(
-        "HelpRequest", backref=backref(__tablename__, cascade="CASCADE")
+        "HelpRequest", backref=backref(__tablename__, cascade="all, delete-orphan")
     )
     reviewer_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     reviewer = relationship(
         "User",
-        backref=backref("ratings_given", cascade="CASCADE"),
+        backref=backref("ratings_given", cascade="all, delete-orphan"),
         foreign_keys=[reviewer_id],
     )
     reviewee_id = Column(
@@ -128,7 +135,7 @@ class Rating(Base, TimestampMixin, SoftDeleteMixin):
     )
     reviewee = relationship(
         "User",
-        backref=backref("ratings_received", cascade="CASCADE"),
+        backref=backref("ratings_received", cascade="all, delete-orphan"),
         foreign_keys=[reviewee_id],
     )
     rating = Column(Float, nullable=False)

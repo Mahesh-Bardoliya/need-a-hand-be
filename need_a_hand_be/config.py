@@ -6,11 +6,23 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application configuration settings."""
 
+    # App secret key.
+    secret_key: str
+
     # Database connection.
     sqlalchemy_database_url: str
 
     # Allowed CORS origins.
-    cors_allow_origins: typing.List[str] = []
+    # NOTE: Currently by default, we are allowing all origins.
+    # In future we need to provide only specific ones.
+    # E.g. frontend origin URL.
+    cors_allow_origins: typing.List[str] = ["*"]
+
+    # JWT algorithm.
+    jwt_algorithm: str = "HS256"
+
+    # Auth token expiry time.
+    access_token_expire_minutes: int = 1
 
     class Config:
         env_file = ".env"
