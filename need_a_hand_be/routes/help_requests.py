@@ -1,4 +1,5 @@
 import json
+import typing
 from datetime import UTC
 from datetime import datetime as dt
 from uuid import UUID
@@ -35,9 +36,9 @@ help_requests = APIRouter(prefix="/help_requests", tags=["HelpRequests"])
     status_code=status.HTTP_200_OK,
 )
 async def fetch_help_requests(
-    query: str = Form({}),
+    query: typing.Optional[str] = Form("{}"),
     search: str = None,
-    sorting: str = Form({}),
+    sorting: typing.Optional[str] = Form("{}"),
     page: int = 1,
     size: int = 50,
     db_session: Session = Depends(get_db_session),
