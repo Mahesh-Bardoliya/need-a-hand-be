@@ -89,7 +89,7 @@ def login(
         {"email": db_user.email, "username": db_user.username}
     )
     response.set_cookie(
-        key="access_token", value=f"Bearer {access_token}", httponly=True
+        key="access_token", value=f"Bearer {access_token}", httponly=True, samesite="none"
     )
 
 
