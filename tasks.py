@@ -7,6 +7,16 @@ from invoke import task
 MODULE = "need_a_hand_be"
 MAIN_APP = f"{MODULE}.main:app"
 
+VERSIONS_DIR = "migrations/versions"
+
+
+def delete_migration_files():
+    if os.path.exists(VERSIONS_DIR):
+        for filename in os.listdir(VERSIONS_DIR):
+            file_path = os.path.join(VERSIONS_DIR, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
 
 def check_project_root(c):
     """Check if we are in the project root directory."""
@@ -70,6 +80,22 @@ def init_db(c):
         # TODO Workaround until poetry reads dotenv.
         "dotenv run python -m alembic stamp head",
     )
+
+
+@task
+def reset_db(c):
+    """Initialize database."""
+    # TODO Poetry should load .env.
+    # TODO https://github.com/python-poetry/poetry/issues/337#issuecomment-894503871
+    virtualenv_run(
+        c,
+        # f"python -m {MODULE}.scripts.init_db",
+        # TODO Workaround until poetry reads dotenv.
+        f"dotenv run python -m {MODULE}.scripts.drop_db",
+    )
+    delete_migration_files()
+    migrate(c, "initial_migration")
+    upgrade_db(c)
 
 
 @task

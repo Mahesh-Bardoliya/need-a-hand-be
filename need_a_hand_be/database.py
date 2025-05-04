@@ -1,3 +1,4 @@
+from sqlalchemy import MetaData
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
@@ -32,4 +33,6 @@ def create_tables(engine):
 
 
 def drop_tables(engine):
-    Base.metadata.drop_all(bind=engine)
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    meta.drop_all(bind=engine)

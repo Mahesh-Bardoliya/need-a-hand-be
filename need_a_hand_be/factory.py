@@ -8,6 +8,8 @@ from .config import Settings
 from .constants import API_PREFIX
 from .database import SessionLocal
 from .routes.auth import auth_router
+from .routes.help_offers import help_offers
+from .routes.help_requests import help_requests
 from .routes.user import users_router
 
 logger = logging.getLogger(__name__)
@@ -24,6 +26,8 @@ def create_fastapi(settings: Settings):
     # Add routes.
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(users_router, prefix=API_PREFIX)
+    app.include_router(help_requests, prefix=API_PREFIX)
+    app.include_router(help_offers, prefix=API_PREFIX)
 
     # CORS.
     app.add_middleware(

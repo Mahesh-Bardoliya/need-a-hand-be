@@ -18,11 +18,11 @@ def get_settings():
     return settings
 
 
-oauth2_scheme = OAuth2PasswordBearerFromCookie(tokenUrl=f"{API_PREFIX}/login")
+oauth2_scheme = OAuth2PasswordBearerFromCookie(tokenUrl=f"{API_PREFIX}/auth/login")
 
 
 # Dependency: Get DB Session
-async def get_db():
+async def get_db_session():
     db = SessionLocal()
     try:
         yield db
@@ -32,7 +32,7 @@ async def get_db():
 
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
-    db_session: Session = Depends(get_db),
+    db_session: Session = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
 ) -> User:
     token_data = decode_token(

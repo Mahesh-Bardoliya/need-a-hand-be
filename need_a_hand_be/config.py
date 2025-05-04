@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # Auth token expiry time.
-    access_token_expire_minutes: int = 1
+    access_token_expire_minutes: int = 60
 
     class Config:
         env_file = ".env"

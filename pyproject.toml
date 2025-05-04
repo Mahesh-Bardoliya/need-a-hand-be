@@ -26,6 +26,7 @@ python-jose = ">=3.4.0,<4.0.0"
 python-dotenv = ">=1.1.0,<2.0.0"
 typer = ">=0.15.2,<0.16.0"
 python-multipart = ">=0.0.20,<0.0.21"
+pyhumps = "^3.8.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
