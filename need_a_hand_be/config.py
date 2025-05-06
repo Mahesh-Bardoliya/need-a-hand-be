@@ -16,7 +16,9 @@ class Settings(BaseSettings):
     # NOTE: Currently by default, we are allowing all origins.
     # In future we need to provide only specific ones.
     # E.g. frontend origin URL.
-    cors_allow_origins: typing.List[str] = ["*"]
+    cors_allow_origins: typing.List[str] = [
+        "https://preview--hand-up-community-app.lovable.app/"
+    ]
 
     # JWT algorithm.
     jwt_algorithm: str = "HS256"
