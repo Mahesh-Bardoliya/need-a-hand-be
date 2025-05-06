@@ -23,7 +23,7 @@ class HelpRequestResponseSchema(HelpRequestBaseSchema, UUIDSchema):
     is_active: bool
     user: UserResponseSchema
     help_offers: list[HelpOfferResponseSchema]
-    created_at: typing.Optional[dt] = None
+    created_at: dt
 
 
 class HelpRequestFilterSchema(BaseModel):

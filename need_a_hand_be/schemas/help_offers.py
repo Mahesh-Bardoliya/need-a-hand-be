@@ -1,4 +1,3 @@
-import typing
 from datetime import datetime as dt
 from uuid import UUID
 
@@ -23,4 +22,4 @@ class HelpOfferResponseSchema(HelpOfferBaseSchema):
     help_request_uuid: UUID
     help_request_title: str
     helper: UserResponseSchema
-    created_at: typing.Optional[dt]
+    created_at: dt

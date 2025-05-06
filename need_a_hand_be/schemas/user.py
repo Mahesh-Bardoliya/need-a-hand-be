@@ -25,6 +25,7 @@ class UserHelpOfferSchema(BaseModel):
     help_request_uuid: UUID
     help_request_title: str
     helper: UserResponseSchema
+    created_at: dt
 
 
 class UserHelpRequestSchema(BaseModel):
@@ -33,7 +34,7 @@ class UserHelpRequestSchema(BaseModel):
     location: str
     is_active: bool
     help_offers: list[UserHelpOfferSchema]
-    created_at: typing.Optional[dt]
+    created_at: dt
 
 
 class UserProfileResponseSchema(UserBaseSchema, UUIDSchema):
