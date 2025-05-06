@@ -191,7 +191,11 @@ def refresh_access_token(
     )
 
     response.set_cookie(
-        key="access_token", value=f"Bearer {access_token}", httponly=True
+        key="access_token",
+        value=f"Bearer {access_token}",
+        httponly=True,
+        secure=True,
+        samesite="none",
     )
 
 
@@ -217,4 +221,9 @@ def logout(response: Response):
     - Cookie is removed regardless of current state
     - Succeeds even if already logged out
     """
-    response.delete_cookie(key="access_token", httponly=True)
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=True,
+        samesite="none",
+    )
