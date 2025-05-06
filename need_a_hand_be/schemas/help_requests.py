@@ -1,4 +1,5 @@
 import typing
+from datetime import datetime as dt
 
 from pydantic import BaseModel
 
@@ -22,6 +23,7 @@ class HelpRequestResponseSchema(HelpRequestBaseSchema, UUIDSchema):
     is_active: bool
     user: UserResponseSchema
     help_offers: list[HelpOfferResponseSchema]
+    created_at: typing.Optional[dt] = None
 
 
 class HelpRequestFilterSchema(BaseModel):

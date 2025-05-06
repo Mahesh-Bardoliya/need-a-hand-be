@@ -1,3 +1,5 @@
+import typing
+from datetime import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -31,6 +33,7 @@ class UserHelpRequestSchema(BaseModel):
     location: str
     is_active: bool
     help_offers: list[UserHelpOfferSchema]
+    created_at: typing.Optional[dt]
 
 
 class UserProfileResponseSchema(UserBaseSchema, UUIDSchema):
