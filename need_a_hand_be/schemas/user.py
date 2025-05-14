@@ -19,7 +19,7 @@ class UserResponseSchema(UserBaseSchema, UUIDSchema):
     total_help_offers_count: int
 
 
-class UserHelpOfferSchema(BaseModel):
+class UserHelpOfferSchema(UUIDSchema):
     message: str
     is_accepted: bool
     help_request_uuid: UUID
@@ -28,7 +28,7 @@ class UserHelpOfferSchema(BaseModel):
     created_at: dt
 
 
-class UserHelpRequestSchema(BaseModel):
+class UserHelpRequestSchema(UUIDSchema):
     title: str
     description: str
     location: str
