@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from .user import UserResponseSchema
+from .utils import UUIDSchema
 
 
 class HelpOfferBaseSchema(BaseModel):
@@ -17,7 +18,7 @@ class HelpOfferCreateSchema(HelpOfferBaseSchema):
         extra = "forbid"
 
 
-class HelpOfferResponseSchema(HelpOfferBaseSchema):
+class HelpOfferResponseSchema(HelpOfferBaseSchema, UUIDSchema):
     is_accepted: bool
     help_request_uuid: UUID
     help_request_title: str
