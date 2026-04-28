@@ -27,6 +27,7 @@ jobs:
 
       - name: Run Backend Tests
         run: |
-          # Create secret_key if not exists for tests
+          # Create .env for tests
           echo "SECRET_KEY=testsecret" > .env
+          echo "SQLALCHEMY_DATABASE_URL=sqlite:///./var/test.db" >> .env
           poetry run pytest

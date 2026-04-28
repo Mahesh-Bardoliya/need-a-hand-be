@@ -8,13 +8,13 @@ class Settings(BaseSettings):
     """Application configuration settings."""
 
     # App secret key.
-    secret_key: str
+    secret_key: str = "development-secret-key-do-not-use-in-production"
 
     # Environment
     environment: str = "development"
 
     # Database connection.
-    sqlalchemy_database_url: str
+    sqlalchemy_database_url: str = "sqlite:///./need_a_hand.db"
 
     # Allowed CORS origins.
     # NOTE: Currently by default, we are allowing all origins.
