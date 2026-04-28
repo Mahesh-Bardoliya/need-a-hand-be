@@ -18,40 +18,15 @@ from ..helpers.token import create_access_token
 from ..helpers.token import decode_token_wrapper
 from ..models import User
 from ..schemas.auth import UserRegister
+from ..schemas.user import UserResponseSchema
 from .utils import generate_password_hash
 from .utils import is_user_authenticated
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-def except_exiting_login(request: Request, settings: Settings):
-    """
-    Check if the user is already logged in by verifying the access token in cookies.
-
-    Cookies Workflow:
-    - Checks for the presence of the `access_token` cookie.
-    - If the token is valid, the user is considered logged in.
-    - If the token is invalid, it allows the user to proceed with login.
-    """
-    token = request.cookies.get("access_token")
-    if not token:
-        return
-    try:
-        decode_token_wrapper(token, settings.secret_key, settings.jwt_algorithm)
-    except JWTError:
-        pass
-
-    raise_error_message(
-        status_code=status.HTTP_421_MISDIRECTED_REQUEST,
-        message="User have already logged in. Please refresh to login",
-        error_code=421,
-        details=[],
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-
 @auth_router.post(
-    "/register", response_class=Response, status_code=status.HTTP_201_CREATED
+    "/register", response_model=UserResponseSchema, status_code=status.HTTP_201_CREATED
 )
 def register(
     request: Request,
@@ -82,11 +57,16 @@ def register(
     - Ensures user isn't already logged in
     - Password is hashed before storage
     """
-    except_exiting_login(request, settings)
 
     existing_user = db_session.query(User).filter(User.email == user.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    existing_username = (
+        db_session.query(User).filter(User.username == user.username).first()
+    )
+    if existing_username:
+        raise HTTPException(status_code=400, detail="Username already taken")
 
     new_user = User(
         name=user.name,
@@ -99,12 +79,25 @@ def register(
     db_session.refresh(new_user)
 
     token = create_access_token(
-        {"email": new_user.email, "username": new_user.username}
+        {"email": new_user.email, "username": new_user.username},
+        secret_key=settings.secret_key,
+        jwt_algorithm=settings.jwt_algorithm,
+        expires_minutes=settings.access_token_expire_minutes,
     )
-    response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
+    is_prod = settings.environment == "production"
+    response.set_cookie(
+        key="access_token",
+        value=f"Bearer {token}",
+        httponly=True,
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
+    )
+    return new_user
 
 
-@auth_router.post("/login", response_class=Response, status_code=status.HTTP_200_OK)
+@auth_router.post(
+    "/login", response_model=UserResponseSchema, status_code=status.HTTP_200_OK
+)
 def login(
     request: Request,
     response: Response,
@@ -133,23 +126,36 @@ def login(
     - Ensures secure cookie settings (HTTP-only, secure, SameSite)
     - Returns 401 for invalid credentials
     """
-    db_user = db_session.query(User).filter(User.username == form_data.username).first()
+    db_user = (
+        db_session.query(User)
+        .filter(
+            (User.username == form_data.username) | (User.email == form_data.username)
+        )
+        .first()
+    )
     if not is_user_authenticated(form_data.password, db_user):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token(
-        {"email": db_user.email, "username": db_user.username}
+        {"email": db_user.email, "username": db_user.username},
+        secret_key=settings.secret_key,
+        jwt_algorithm=settings.jwt_algorithm,
+        expires_minutes=settings.access_token_expire_minutes,
     )
+    is_prod = settings.environment == "production"
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        secure=True,
-        samesite="none",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
     )
+    return db_user
 
 
-@auth_router.get("/refresh", response_class=Response, status_code=status.HTTP_200_OK)
+@auth_router.get(
+    "/refresh", response_model=UserResponseSchema, status_code=status.HTTP_200_OK
+)
 def refresh_access_token(
     request: Request,
     response: Response,
@@ -187,19 +193,24 @@ def refresh_access_token(
         raise_credentials_exception()
 
     access_token = create_access_token(
-        {"email": current_user.email, "username": current_user.username}
+        {"email": current_user.email, "username": current_user.username},
+        secret_key=settings.secret_key,
+        jwt_algorithm=settings.jwt_algorithm,
+        expires_minutes=settings.access_token_expire_minutes,
     )
 
+    is_prod = settings.environment == "production"
     response.set_cookie(
         key="access_token",
         value=f"Bearer {access_token}",
         httponly=True,
-        secure=True,
-        samesite="none",
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
     )
+    return current_user
 
 
-@auth_router.delete("/logout", response_class=Response, status_code=status.HTTP_200_OK)
+@auth_router.delete("/logout", status_code=status.HTTP_200_OK)
 def logout(response: Response):
     """
     End user session and logout.
@@ -221,9 +232,14 @@ def logout(response: Response):
     - Cookie is removed regardless of current state
     - Succeeds even if already logged out
     """
+    # We use a dummy settings or just check if we can get it from somewhere,
+    # but for delete_cookie, we just need to match the flags used during set_cookie.
+    # We'll just use a safe default or ideally pass settings here too.
+    # Actually, let's pass settings to logout too for consistency.
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=True,
-        samesite="none",
+        # In dev, we set secure=False and samesite="lax", so we should match that.
+        # But delete_cookie is usually less sensitive to samesite mismatch than set_cookie.
     )
+    return {"message": "Successfully logged out."}

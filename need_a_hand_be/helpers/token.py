@@ -12,13 +12,19 @@ from ..schemas.token import TokenData
 from .errors_and_exceptions import raise_credentials_exception
 
 
-def create_access_token(data: dict, expires_delta: td = None):
+def create_access_token(
+    data: dict,
+    secret_key: str,
+    jwt_algorithm: str,
+    expires_minutes: int,
+    expires_delta: td = None,
+):
     to_encode = data.copy()
     expire = dt.now(UTC).replace(tzinfo=None) + (
-        expires_delta or td(minutes=settings.access_token_expire_minutes)
+        expires_delta or td(minutes=expires_minutes)
     )
     to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
+    return jwt.encode(to_encode, secret_key, algorithm=jwt_algorithm)
 
 
 def decode_token(

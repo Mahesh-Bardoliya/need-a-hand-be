@@ -1,0 +1,32 @@
+name: Backend CI Tests
+
+on:
+  push:
+    branches: [ main, master, 'feature/**', 'fix/**' ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run Backend Tests
+        run: |
+          # Create secret_key if not exists for tests
+          echo "SECRET_KEY=testsecret" > .env
+          poetry run pytest

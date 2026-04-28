@@ -4,13 +4,14 @@ from uuid import UUID
 
 from pydantic import BaseModel
 from pydantic import EmailStr
+from pydantic import Field
 
 from .utils import UUIDSchema
 
 
 class UserBaseSchema(BaseModel):
-    name: str
-    username: str
+    name: str = Field(min_length=2, max_length=100)
+    username: str = Field(min_length=3, max_length=32)
     email: EmailStr
 
 

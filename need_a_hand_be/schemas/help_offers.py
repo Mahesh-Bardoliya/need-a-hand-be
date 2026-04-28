@@ -2,20 +2,20 @@ from datetime import datetime as dt
 from uuid import UUID
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
+from pydantic import Field
 
 from .user import UserResponseSchema
 from .utils import UUIDSchema
 
 
 class HelpOfferBaseSchema(BaseModel):
-    message: str
+    message: str = Field(min_length=5, max_length=1000)
 
 
 class HelpOfferCreateSchema(HelpOfferBaseSchema):
     help_request_uuid: UUID
-
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class HelpOfferResponseSchema(HelpOfferBaseSchema, UUIDSchema):

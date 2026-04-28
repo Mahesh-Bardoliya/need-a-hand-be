@@ -1,13 +1,17 @@
 import os
 
 import click
+import dotenv
+from dotenv import load_dotenv
 from invoke import Exit
 from invoke import task
 
+load_dotenv()  # Loads variables from .env into os.environ
 MODULE = "need_a_hand_be"
 MAIN_APP = f"{MODULE}.main:app"
 
 VERSIONS_DIR = "migrations/versions"
+db_url = os.environ.get("SQLALCHEMY_DATABASE_URL")
 
 
 def delete_migration_files():
@@ -71,14 +75,12 @@ def init_db(c):
         c,
         # f"python -m {MODULE}.scripts.init_db",
         # TODO Workaround until poetry reads dotenv.
-        f"dotenv run python -m {MODULE}.scripts.init_db",
+        f"python -m {MODULE}.scripts.init_db",
     )
     # Add alembic stamp.
     virtualenv_run(
         c,
-        # "python -m alembic stamp head",
-        # TODO Workaround until poetry reads dotenv.
-        "dotenv run python -m alembic stamp head",
+        f"python -m alembic -x db_url='{db_url}' stamp head",
     )
 
 

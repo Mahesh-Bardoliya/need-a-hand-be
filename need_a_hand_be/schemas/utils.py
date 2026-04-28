@@ -10,26 +10,22 @@ from uuid import UUID
 from humps import camelize
 from humps import kebabize
 from pydantic import BaseModel
+from pydantic import ConfigDict
 
 # Can be anything (type)
 T = TypeVar("T")
 
 
 class CamelCaseModel(BaseModel):
-    class Config:
-        alias_generator = camelize
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=camelize, populate_by_name=True)
 
 
 class KebabCaseModel(BaseModel):
-    class Config:
-        alias_generator = kebabize
-        populate_by_name = True
+    model_config = ConfigDict(alias_generator=kebabize, populate_by_name=True)
 
 
 class DisallowExtraFieldModel(BaseModel):
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 # Generic schema for paginated response.

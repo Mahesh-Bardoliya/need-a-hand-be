@@ -97,10 +97,25 @@ async def fetch_help_requests(
     - 400: Invalid query/sorting JSON format
     - 400: Invalid page/size values
     """
+    if page <= 0:
+        raise_error_message(
+            status_code=400,
+            message="Page number should be 1 or greater",
+            error_code=4001,
+            details=[{"dev_error": ""}],
+        )
+    if size <= 0:
+        raise_error_message(
+            status_code=400,
+            message="Page size should be 1 or greater",
+            error_code=4001,
+            details=[{"dev_error": ""}],
+        )
+
     try:
-        query = json.loads(query)
+        query = json.loads(query) if query else {}
         query = HelpRequestFilterSchema(**query).model_dump(exclude_unset=True)
-    except json.decoder.JSONDecodeError as e:
+    except (json.decoder.JSONDecodeError, TypeError) as e:
         raise_error_message(
             status_code=400,
             message="Encoding Error in query",
@@ -109,12 +124,12 @@ async def fetch_help_requests(
         )
     if sorting:
         try:
-            sorting = json.loads(sorting)
+            sorting = json.loads(sorting) if sorting else {}
             sorting = {
                 change_case(column_name): order
                 for column_name, order in sorting.items()
             }
-        except json.decoder.JSONDecodeError as e:
+        except (json.decoder.JSONDecodeError, TypeError) as e:
             raise_error_message(
                 status_code=400,
                 message="Encoding Error in sorting",
@@ -144,21 +159,6 @@ async def fetch_help_requests(
     else:
         help_request_query = help_request_query.order_by(
             desc(func.coalesce(HelpRequest.updated_at, HelpRequest.created_at))
-        )
-
-    if page <= 0:
-        raise_error_message(
-            status_code=400,
-            message="Page number should be 1 or greater",
-            error_code=4001,
-            details=[{"dev_error": ""}],
-        )
-    if size <= 0:
-        raise_error_message(
-            status_code=400,
-            message="Page size should be 1 or greater",
-            error_code=4001,
-            details=[{"dev_error": ""}],
         )
 
     offset = (page - 1) * size
@@ -308,9 +308,9 @@ async def delete_help_requests(
         )
     if help_request.user != current_user:
         raise_error_message(
-            status_code=401,
+            status_code=403,
             message="Unauthorized.",
-            error_code=4004,
+            error_code=4003,
             details=[{"dev_error": ""}],
         )
     help_request.deleted_at = dt.now(UTC).replace(tzinfo=None)

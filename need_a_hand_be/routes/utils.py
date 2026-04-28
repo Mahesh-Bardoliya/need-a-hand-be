@@ -1,6 +1,6 @@
 import re
 
-from passlib.context import CryptContext
+import bcrypt
 from sqlalchemy import asc
 from sqlalchemy import desc
 from sqlalchemy import func
@@ -10,15 +10,22 @@ from sqlalchemy import or_
 
 from ..models import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def generate_password_hash(password: str) -> str:
+    # bcrypt requires bytes, and returns bytes
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
-def generate_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
+    except ValueError:
+        # Invalid salt/hash format
+        return False
 
 
 def is_user_authenticated(password: str, user: User = None):

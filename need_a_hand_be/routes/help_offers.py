@@ -150,9 +150,9 @@ async def accept_help_offer(
 
     if help_offer.help_request.user != current_user:
         raise_error_message(
-            status_code=401,
+            status_code=403,
             message="Unauthorized.",
-            error_code=4001,
+            error_code=4003,
             details=[{"dev_error": ""}],
         )
 

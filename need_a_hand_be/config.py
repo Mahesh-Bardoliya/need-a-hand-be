@@ -1,5 +1,6 @@
 import typing
 
+from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
 
 
@@ -8,6 +9,9 @@ class Settings(BaseSettings):
 
     # App secret key.
     secret_key: str
+
+    # Environment
+    environment: str = "development"
 
     # Database connection.
     sqlalchemy_database_url: str
@@ -20,6 +24,10 @@ class Settings(BaseSettings):
         "https://preview--hand-up-community-app.lovable.app",
         "https://localhost",
         "capacitor://localhost",
+        "http://localhost",
+        "http://localhost:8081",
+        "http://127.0.0.1",
+        "http://127.0.0.1:8081",
     ]
 
     # JWT algorithm.
@@ -28,9 +36,7 @@ class Settings(BaseSettings):
     # Auth token expiry time.
     access_token_expire_minutes: int = 60
 
-    class Config:
-        env_file = ".env"
-        extra = "allow"
+    model_config = ConfigDict(env_file=".env", extra="allow")
 
 
 # Create a settings instance

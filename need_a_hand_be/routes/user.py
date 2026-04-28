@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter
 from fastapi import Depends
 from sqlalchemy.orm import Session
@@ -35,7 +37,7 @@ def current_user_profile(current_user: User = Depends(get_current_user)):
 
 
 @users_router.get("/{uuid}", response_model=UserResponseSchema)
-def fetch_user(uuid: str, db_session: Session = Depends(get_db_session)):
+def fetch_user(uuid: UUID, db_session: Session = Depends(get_db_session)):
     """
     Retrieve a specific user's public profile by UUID.
 

@@ -22,7 +22,8 @@ def create_fastapi(settings: Settings):
     """
 
     app = FastAPI(title="Need a hand?")
-    app.openapi_schema = None
+    if settings.environment != "development":
+        app.openapi_schema = None
     # Add routes.
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(users_router, prefix=API_PREFIX)
