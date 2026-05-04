@@ -94,7 +94,7 @@ async def test_paginate_returns_all_items(auth_client2):
     for i in range(5):
         await _create_request(auth_client2, title=f"Request {i}")
 
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate")
+    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate", json={})
     assert res.status_code == 200
     data = res.json()
     assert len(data["items"]) == 5
@@ -107,7 +107,9 @@ async def test_paginate_respects_size(auth_client2):
     for i in range(5):
         await _create_request(auth_client2, title=f"Request {i}")
 
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate?size=2&page=1")
+    res = await auth_client2.post(
+        f"{API_PREFIX}/help_requests/paginate?size=2&page=1", json={}
+    )
     assert res.status_code == 200
     assert len(res.json()["items"]) == 2
 
@@ -117,20 +119,26 @@ async def test_paginate_page_2(auth_client2):
     for i in range(5):
         await _create_request(auth_client2, title=f"Request {i}")
 
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate?size=2&page=2")
+    res = await auth_client2.post(
+        f"{API_PREFIX}/help_requests/paginate?size=2&page=2", json={}
+    )
     assert res.status_code == 200
     assert len(res.json()["items"]) == 2
 
 
 @pytest.mark.asyncio
 async def test_paginate_invalid_page(auth_client2):
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate?page=0")
+    res = await auth_client2.post(
+        f"{API_PREFIX}/help_requests/paginate?page=0", json={}
+    )
     assert res.status_code == 400
 
 
 @pytest.mark.asyncio
 async def test_paginate_invalid_size(auth_client2):
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate?size=0")
+    res = await auth_client2.post(
+        f"{API_PREFIX}/help_requests/paginate?size=0", json={}
+    )
     assert res.status_code == 400
 
 
@@ -142,7 +150,9 @@ async def test_paginate_search_matches_title(auth_client2):
     await _create_request(auth_client2, title="Moving a couch downtown")
     await _create_request(auth_client2, title="Fix my computer")
 
-    res = await auth_client2.post(f"{API_PREFIX}/help_requests/paginate?search=couch")
+    res = await auth_client2.post(
+        f"{API_PREFIX}/help_requests/paginate?search=couch", json={"search": "couch"}
+    )
     assert res.status_code == 200
     items = res.json()["items"]
     assert len(items) == 1
@@ -154,7 +164,8 @@ async def test_paginate_search_no_results(auth_client2):
     await _create_request(auth_client2, title="Gardening help")
 
     res = await auth_client2.post(
-        f"{API_PREFIX}/help_requests/paginate?search=zzznomatch"
+        f"{API_PREFIX}/help_requests/paginate?search=zzznomatch",
+        json={"search": "zzznomatch"},
     )
     assert res.status_code == 200
     assert res.json()["size"] == 0
@@ -194,7 +205,7 @@ async def test_paginate_filter_active(auth_client2):
     # Send query as a Form field (JSON string) — the route uses Form(...)
     res = await auth_client2.post(
         f"{API_PREFIX}/help_requests/paginate",
-        data={"query": _json.dumps({"is_active": True})},
+        json={"query": {"is_active": True}},
     )
     assert res.status_code == 200
     items = res.json()["items"]

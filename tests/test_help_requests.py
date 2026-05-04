@@ -62,7 +62,7 @@ async def test_get_help_requests(auth_client):
             },
         )
 
-    response = await auth_client.post(f"{API_PREFIX}/help_requests/paginate")
+    response = await auth_client.post(f"{API_PREFIX}/help_requests/paginate", json={})
     assert response.status_code == 200
     data = response.json()
     assert "items" in data

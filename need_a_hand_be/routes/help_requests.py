@@ -20,6 +20,7 @@ from ..models import HelpRequest
 from ..models import User
 from ..schemas.help_requests import HelpRequestCreateSchema
 from ..schemas.help_requests import HelpRequestFilterSchema
+from ..schemas.help_requests import HelpRequestPaginatePayload
 from ..schemas.help_requests import HelpRequestResponseSchema
 from ..schemas.utils import PaginatedResponse
 from .utils import apply_filters
@@ -36,111 +37,35 @@ help_requests = APIRouter(prefix="/help_requests", tags=["HelpRequests"])
     status_code=status.HTTP_200_OK,
 )
 async def fetch_help_requests(
-    query: typing.Optional[str] = Form("{}"),
-    search: str = None,
-    sorting: typing.Optional[str] = Form("{}"),
+    payload: HelpRequestPaginatePayload,
     page: int = 1,
     size: int = 50,
     db_session: Session = Depends(get_db_session),
 ):
-    """
-    Fetch paginated help requests with advanced filtering, searching, and sorting capabilities.
-
-    Frontend Usage:
-    - Use this API for the main help requests listing page
-    - Implement filters sidebar/search bar using the supported fields
-    - Handle pagination for infinite scroll or page navigation
-
-    Request Parameters:
-    - query (JSON string): Filter criteria
-        Queryable Fields:
-        * is_active (bool): Filter active/inactive requests
-        * location (str): Filter by exact location match
-        * created_at (datetime): Filter by creation date
-        * title (str): Filter by exact title match
-
-    - search (str): Full-text search across multiple fields
-        Searchable Fields:
-        * title: Help request title
-        * description: Help request details
-        * location: Location information
-
-    - sorting (JSON string): Sort configuration
-        Sortable Fields:
-        * title: Sort alphabetically
-        * is_active: Sort by active status
-        * location: Sort by location
-        * created_at: Sort by creation date
-        Format: {"field_name": "asc"/"desc"}
-
-    - page (int): Page number (starts from 1)
-    - size (int): Items per page (default: 50)
-
-    Workflow Integration:
-    1. Initial Page Load:
-       - Call with default parameters for initial listing
-       - Example: fetch_help_requests(page=1, size=20)
-
-    2. User Applies Filters:
-       - Construct query JSON with selected filters
-       - Example: {"is_active": true, "location": "New York"}
-
-    3. User Searches:
-       - Pass search term directly
-       - Example: search="urgent help needed"
-
-    4. User Changes Sort:
-       - Construct sorting JSON
-       - Example: {"created_at": "desc"}
-
-    Error Handling:
-    - 400: Invalid query/sorting JSON format
-    - 400: Invalid page/size values
-    """
     if page <= 0:
         raise_error_message(
             status_code=400,
             message="Page number should be 1 or greater",
             error_code=4001,
-            details=[{"dev_error": ""}],
+            details=[],
         )
     if size <= 0:
         raise_error_message(
             status_code=400,
             message="Page size should be 1 or greater",
             error_code=4001,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
-    try:
-        query = json.loads(query) if query else {}
-        query = HelpRequestFilterSchema(**query).model_dump(exclude_unset=True)
-    except (json.decoder.JSONDecodeError, TypeError) as e:
-        raise_error_message(
-            status_code=400,
-            message="Encoding Error in query",
-            error_code=4001,
-            details=[{"dev_error": str(e)}],
-        )
-    if sorting:
-        try:
-            sorting = json.loads(sorting) if sorting else {}
-            sorting = {
-                change_case(column_name): order
-                for column_name, order in sorting.items()
-            }
-        except (json.decoder.JSONDecodeError, TypeError) as e:
-            raise_error_message(
-                status_code=400,
-                message="Encoding Error in sorting",
-                error_code=4001,
-                details=[{"dev_error": str(e)}],
-            )
+    query = payload.query.model_dump(exclude_unset=True)
+    search = payload.search
+    sorting = {
+        change_case(column_name): order
+        for column_name, order in payload.sorting.items()
+    }
 
-    help_request_query = (
-        db_session.query(HelpRequest)
-        .filter(HelpRequest.deleted_at == None)
-        .options(selectinload(HelpRequest.user))
+    help_request_query = db_session.query(HelpRequest).options(
+        selectinload(HelpRequest.user)
     )
     if query:
         help_request_query = apply_filters(HelpRequest, help_request_query, query)
@@ -206,7 +131,6 @@ async def retrieve_help_requests(
     help_request = (
         db_session.query(HelpRequest)
         .filter(HelpRequest.uuid == help_request_uuid)
-        .filter(HelpRequest.deleted_at == None)
         .options(selectinload(HelpRequest.user))
     ).one_or_none()
     if not help_request:
@@ -214,7 +138,7 @@ async def retrieve_help_requests(
             status_code=404,
             message="Help request not found.",
             error_code=4004,
-            details=[{"dev_error": ""}],
+            details=[],
         )
     return help_request
 
@@ -258,7 +182,6 @@ async def create_help_requests(
     """
     help_request = HelpRequest(**help_request_data.model_dump())
     help_request.user = current_user
-    help_request.created_by_user = current_user
     help_request.is_active = True
     db_session.add(help_request)
     db_session.commit()
@@ -296,7 +219,6 @@ async def delete_help_requests(
     help_request = (
         db_session.query(HelpRequest)
         .filter(HelpRequest.uuid == help_request_uuid)
-        .filter(HelpRequest.deleted_at == None)
         .options(selectinload(HelpRequest.user))
     ).one_or_none()
     if not help_request:
@@ -304,16 +226,15 @@ async def delete_help_requests(
             status_code=404,
             message="Help request not found.",
             error_code=4004,
-            details=[{"dev_error": ""}],
+            details=[],
         )
     if help_request.user != current_user:
         raise_error_message(
             status_code=403,
             message="Unauthorized.",
             error_code=4003,
-            details=[{"dev_error": ""}],
+            details=[],
         )
     help_request.deleted_at = dt.now(UTC).replace(tzinfo=None)
-    help_request.updated_by_user = current_user
     db_session.add(help_request)
     db_session.commit()

@@ -28,6 +28,12 @@ class HelpRequestResponseSchema(HelpRequestBaseSchema, UUIDSchema):
 
 
 class HelpRequestFilterSchema(BaseModel):
-    is_active: typing.Optional[typing.Any] = None
-    title: typing.Optional[typing.Any] = None
-    location: typing.Optional[typing.Any] = None
+    is_active: typing.Optional[bool] = None
+    title: typing.Optional[str] = None
+    location: typing.Optional[str] = None
+
+
+class HelpRequestPaginatePayload(BaseModel):
+    query: HelpRequestFilterSchema = Field(default_factory=HelpRequestFilterSchema)
+    search: typing.Optional[str] = None
+    sorting: dict[str, typing.Literal["asc", "desc"]] = Field(default_factory=dict)

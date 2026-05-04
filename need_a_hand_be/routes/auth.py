@@ -153,6 +153,9 @@ def login(
     return db_user
 
 
+from ..dependencies import get_current_user_for_refresh
+
+
 @auth_router.get(
     "/refresh", response_model=UserResponseSchema, status_code=status.HTTP_200_OK
 )
@@ -160,37 +163,29 @@ def refresh_access_token(
     request: Request,
     response: Response,
     settings: Settings = Depends(get_settings),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_for_refresh),
 ):
     """
     Refresh the current session's access token.
 
     Overview:
-    - Validates current token
+    - Validates current token (allows recently expired ones)
     - Issues new access token
     - Maintains user session
 
     Use Case & Workflow:
-    1. Called automatically before token expiration
-    2. Validates existing token
+    1. Called automatically when a request returns 401
+    2. Validates existing token signature and window
     3. Generates new token with fresh expiration
     4. Updates session cookie
     5. Returns 200 OK on success
 
     Validations:
-    - Verifies existing token is valid
+    - Verifies existing token signature is valid
+    - Allows tokens expired within the last 7 days
     - Checks user still exists and is active
-    - Validates token signature and expiration
-    - Returns 401 if current token is invalid
+    - Returns 401 if current token is invalid or too old
     """
-    try:
-        decode_token_wrapper(
-            request.cookies.get("access_token"),
-            settings.secret_key,
-            settings.jwt_algorithm,
-        )
-    except JWTError:
-        raise_credentials_exception()
 
     access_token = create_access_token(
         {"email": current_user.email, "username": current_user.username},
@@ -211,7 +206,10 @@ def refresh_access_token(
 
 
 @auth_router.delete("/logout", status_code=status.HTTP_200_OK)
-def logout(response: Response):
+def logout(
+    response: Response,
+    settings: Settings = Depends(get_settings),
+):
     """
     End user session and logout.
 
@@ -232,14 +230,11 @@ def logout(response: Response):
     - Cookie is removed regardless of current state
     - Succeeds even if already logged out
     """
-    # We use a dummy settings or just check if we can get it from somewhere,
-    # but for delete_cookie, we just need to match the flags used during set_cookie.
-    # We'll just use a safe default or ideally pass settings here too.
-    # Actually, let's pass settings to logout too for consistency.
+    is_prod = settings.environment == "production"
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        # In dev, we set secure=False and samesite="lax", so we should match that.
-        # But delete_cookie is usually less sensitive to samesite mismatch than set_cookie.
+        secure=is_prod,
+        samesite="none" if is_prod else "lax",
     )
     return {"message": "Successfully logged out."}

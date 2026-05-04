@@ -66,7 +66,7 @@ async def create_help_offer(
             status_code=404,
             message="Help request not found.",
             error_code=4004,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
     if help_request.user == current_user:
@@ -74,7 +74,7 @@ async def create_help_offer(
             status_code=400,
             message="You cannot offer help to your own request.",
             error_code=4005,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
     help_offer = HelpOffer(
@@ -137,7 +137,7 @@ async def accept_help_offer(
             status_code=404,
             message="Help offer not found.",
             error_code=4004,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
     if not help_offer.help_request.is_active:
@@ -145,7 +145,7 @@ async def accept_help_offer(
             status_code=400,
             message="Help offer is no longer valid.",
             error_code=4000,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
     if help_offer.help_request.user != current_user:
@@ -153,7 +153,7 @@ async def accept_help_offer(
             status_code=403,
             message="Unauthorized.",
             error_code=4003,
-            details=[{"dev_error": ""}],
+            details=[],
         )
 
     help_offer.is_accepted = True

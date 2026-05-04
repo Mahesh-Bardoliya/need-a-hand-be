@@ -56,17 +56,13 @@ def fetch_user(uuid: UUID, db_session: Session = Depends(get_db_session)):
     - Returns 404 if user not found
     - Only returns non-sensitive user information
     """
-    user = (
-        db_session.query(User)
-        .filter(User.uuid == uuid, User.deleted_at == None)
-        .one_or_none()
-    )
+    user = db_session.query(User).filter(User.uuid == uuid).one_or_none()
 
     if not user:
         raise_error_message(
             status_code=404,
             message="User not found.",
             error_code=4004,
-            details=[{"dev_error": ""}],
+            details=[],
         )
     return user

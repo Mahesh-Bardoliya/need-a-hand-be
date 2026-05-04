@@ -30,6 +30,11 @@ async def get_db_session():
         db.close()
 
 
+from contextvars import ContextVar
+
+current_user_id_var: ContextVar[int] = ContextVar("current_user_id", default=None)
+
+
 async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db_session: Session = Depends(get_db_session),
@@ -41,4 +46,22 @@ async def get_current_user(
     user = db_session.query(User).filter_by(email=token_data.email).first()
     if user is None:
         raise_credentials_exception()
+    current_user_id_var.set(user.id)
+    return user
+
+
+async def get_current_user_for_refresh(
+    token: str = Depends(oauth2_scheme),
+    db_session: Session = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> User:
+    from .helpers.token import decode_expired_token
+
+    token_data = decode_expired_token(
+        token, secret_key=settings.secret_key, jwt_algorithm=settings.jwt_algorithm
+    )
+    user = db_session.query(User).filter_by(email=token_data.email).first()
+    if user is None:
+        raise_credentials_exception()
+    current_user_id_var.set(user.id)
     return user

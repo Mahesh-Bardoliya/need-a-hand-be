@@ -34,7 +34,31 @@ def decode_token(
 ):
     try:
         payload = jwt.decode(token, secret_key, algorithms=[jwt_algorithm])
-        username: str = payload.get("email")
+        username: str = payload.get("username")
+        email: str = payload.get("email")
+        if username is None:
+            raise_credentials_exception()
+        token_data = TokenData(username=username, email=email)
+    except JWTError:
+        raise_credentials_exception()
+    return token_data
+
+
+def decode_expired_token(
+    token: str,
+    secret_key: str,
+    jwt_algorithm: str,
+):
+    try:
+        payload = jwt.decode(
+            token, secret_key, algorithms=[jwt_algorithm], options={"verify_exp": False}
+        )
+        exp = payload.get("exp")
+        # Ensure it hasn't been expired for more than 7 days
+        if exp and (dt.now(UTC).replace(tzinfo=None).timestamp() - exp) > 7 * 24 * 3600:
+            raise_credentials_exception()
+
+        username: str = payload.get("username")
         email: str = payload.get("email")
         if username is None:
             raise_credentials_exception()
