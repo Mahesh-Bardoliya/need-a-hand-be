@@ -5,7 +5,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 
 from .config import Settings
+from .constants import API_PREFIX
 from .database import SessionLocal
+from .routes.auth import auth_router
+from .routes.help_offers import help_offers
+from .routes.help_requests import help_requests
+from .routes.user import users_router
 
 logger = logging.getLogger(__name__)
 
@@ -17,8 +22,15 @@ def create_fastapi(settings: Settings):
     """
 
     app = FastAPI(title="Need a hand?")
+    if settings.environment != "development":
+        app.openapi_schema = None
+    # Add routes.
+    app.include_router(auth_router, prefix=API_PREFIX)
+    app.include_router(users_router, prefix=API_PREFIX)
+    app.include_router(help_requests, prefix=API_PREFIX)
+    app.include_router(help_offers, prefix=API_PREFIX)
 
-    # CORS
+    # CORS.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_allow_origins,

@@ -1,11 +1,25 @@
 import os
 
 import click
+import dotenv
+from dotenv import load_dotenv
 from invoke import Exit
 from invoke import task
 
+load_dotenv()  # Loads variables from .env into os.environ
 MODULE = "need_a_hand_be"
 MAIN_APP = f"{MODULE}.main:app"
+
+VERSIONS_DIR = "migrations/versions"
+db_url = os.environ.get("SQLALCHEMY_DATABASE_URL")
+
+
+def delete_migration_files():
+    if os.path.exists(VERSIONS_DIR):
+        for filename in os.listdir(VERSIONS_DIR):
+            file_path = os.path.join(VERSIONS_DIR, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
 
 
 def check_project_root(c):
@@ -41,6 +55,49 @@ def run(c):
         c,
         f"uvicorn {MAIN_APP} --reload",
     )
+
+
+@task
+def run_global(c):
+    """Run debug server globally on local."""
+    virtualenv_run(
+        c,
+        f"uvicorn {MAIN_APP} --host 0.0.0.0 --reload",
+    )
+
+
+@task
+def init_db(c):
+    """Initialize database."""
+    # TODO Poetry should load .env.
+    # TODO https://github.com/python-poetry/poetry/issues/337#issuecomment-894503871
+    virtualenv_run(
+        c,
+        # f"python -m {MODULE}.scripts.init_db",
+        # TODO Workaround until poetry reads dotenv.
+        f"python -m {MODULE}.scripts.init_db",
+    )
+    # Add alembic stamp.
+    virtualenv_run(
+        c,
+        f"python -m alembic -x db_url='{db_url}' stamp head",
+    )
+
+
+@task
+def reset_db(c):
+    """Initialize database."""
+    # TODO Poetry should load .env.
+    # TODO https://github.com/python-poetry/poetry/issues/337#issuecomment-894503871
+    virtualenv_run(
+        c,
+        # f"python -m {MODULE}.scripts.init_db",
+        # TODO Workaround until poetry reads dotenv.
+        f"dotenv run python -m {MODULE}.scripts.drop_db",
+    )
+    delete_migration_files()
+    migrate(c, "initial_migration")
+    upgrade_db(c)
 
 
 @task
